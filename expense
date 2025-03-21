@@ -40,12 +40,28 @@ def display_content():
         delete NUMBER - remove expense with id NUMBER
         search QUERY - list expenses with a matching memo field
 """))
+    
+def add_expense(amount, memo):
+    try:
+        connection = psycopg2.connect(dbname='expenses')
+        with connection:
+            with connection.cursor(cursor_factory=extras.DictCursor) as cursor:
+                cursor.execute("""INSERT INTO expenses (amount, memo, created_on) VALUES (%s, %s, NOW())""", (amount, memo))
+    finally:
+        connection.close()
 
 def main():
     command = sys.argv[1] if len(sys.argv) > 1 else None
 
     if command == 'list':
         list_expenses()
+    elif command == 'add':
+        if len(sys.argv) < 3:
+            print("You must provide an amount and memo.")
+        else:
+            amount = sys.argv[2]
+            memo = sys.argv[3]
+            add_expense(amount, memo)
     else:
         display_content()
 
