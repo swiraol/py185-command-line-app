@@ -42,13 +42,13 @@ class ExpenseData:
     def list_expenses(self):
         try:
             with self.connection:
-                with self.connection.cursor(cursor_factory=extras.DictCursor) as self.cursor:
-                    self.cursor.execute("""SELECT * FROM expenses ORDER BY created_on DESC""")
-                    self.rows = self.cursor.fetchall()
+                with self.connection.cursor(cursor_factory=extras.DictCursor) as cursor:
+                    cursor.execute("""SELECT * FROM expenses ORDER BY created_on DESC""")
+                    rows = cursor.fetchall()
         finally:
             self.connection.close()
         
-        for row in self.rows:
+        for row in rows:
             columns = [
                 str(row['id']).rjust(3),
                 str(row['created_on']),
@@ -61,8 +61,8 @@ class ExpenseData:
     def add_expense(self, amount, memo):
         try:
             with self.connection:
-                with self.connection.cursor() as self.cursor:
-                    self.cursor.execute(f"""INSERT INTO expenses (amount, memo, created_on) VALUES (%s, %s, %s)""", (amount, memo, date.today()))
+                with self.connection.cursor() as cursor:
+                    cursor.execute("""INSERT INTO expenses (amount, memo, created_on) VALUES (%s, %s, %s)""", (amount, memo, date.today()))
         finally:
             self.connection.close()
 
