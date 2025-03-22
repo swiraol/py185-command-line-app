@@ -9,18 +9,18 @@ from psycopg2 import extras
 
 class CLI:
     def __init__(self):
-        self.expense_data = ExpenseData()
+        self.application = ExpenseData()
     def run(self, my_list):
         if not my_list:
             CLI().display_help()
         elif my_list[0] == 'add' and len(my_list) == 1:
             print("You must provide an amount and memo.")
         elif my_list[0] == 'list':
-            self.expense_data.list_expenses()
+            self.application.list_expenses()
         elif len(my_list) >= 3:
             amount = my_list[1]
             memo = my_list[2]
-            self.expense_data.add_expense(amount, memo)
+            self.application.add_expense(amount, memo)
 
     def display_help(self):
         print(dedent("""
@@ -66,5 +66,6 @@ class ExpenseData:
         finally:
             self.connection.close()
 
-track_expenses = CLI()
-track_expenses.run(sys.argv[1:]) # [./expense, add 1.25 'Coffee']
+if __name__ == '__main__':
+    cli = CLI()
+    cli.run(sys.argv[1:]) # [./expense, add 1.25 'Coffee']
