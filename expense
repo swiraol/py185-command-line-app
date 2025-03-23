@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-from contextlib import contextmanager 
 from datetime import date
 from textwrap import dedent
 import sys
+
+from contextlib import contextmanager 
 
 import psycopg2
 from psycopg2 import extras
@@ -37,19 +38,17 @@ class CLI:
     """))
 
 class ExpenseData:
-    # def __init__(self):
-    #     self.connection = psycopg2.connect(dbname='expenses')
-
     @contextmanager
-    def _database_connect(self, dbname='expenses'):
-        connection = psycopg2.connect(dbname)
+    def _database_connect(self):
+        connection = psycopg2.connect(dbname='expenses')
         try:
-            yield connection
+            with connection:
+                yield connection
         finally:
             connection.close()
     
     def list_expenses(self):
-        with self._database_connect as my_connection:
+        with self._database_connect() as my_connection:
             with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
                 cursor.execute("""SELECT * FROM expenses ORDER BY created_on DESC""")
                 rows = cursor.fetchall()
@@ -65,7 +64,7 @@ class ExpenseData:
             print(' | '.join(columns))
 
     def add_expense(self, amount, memo):
-        with self._database_connect as my_connection:
+        with self._database_connect() as my_connection:
             with my_connection.cursor() as cursor:
                 cursor.execute("""INSERT INTO expenses (amount, memo, created_on) VALUES (%s, %s, %s)""", (amount, memo, date.today()))
 
