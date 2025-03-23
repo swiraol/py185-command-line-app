@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from contextlib import contextmanager 
 from datetime import date
 from textwrap import dedent
 import sys
@@ -12,7 +13,7 @@ class CLI:
         self.application = ExpenseData()
     def run(self, my_list):
         if not my_list:
-            CLI().display_help()
+            self.display_help()
         elif my_list[0] == 'add' and len(my_list) == 1:
             print("You must provide an amount and memo.")
         elif my_list[0] == 'list':
@@ -36,17 +37,22 @@ class CLI:
     """))
 
 class ExpenseData:
-    def __init__(self):
-        self.connection = psycopg2.connect(dbname='expenses')
+    # def __init__(self):
+    #     self.connection = psycopg2.connect(dbname='expenses')
+
+    @contextmanager
+    def _database_connect(self, dbname='expenses'):
+        connection = psycopg2.connect(dbname)
+        try:
+            yield connection
+        finally:
+            connection.close()
     
     def list_expenses(self):
-        try:
-            with self.connection:
-                with self.connection.cursor(cursor_factory=extras.DictCursor) as cursor:
-                    cursor.execute("""SELECT * FROM expenses ORDER BY created_on DESC""")
-                    rows = cursor.fetchall()
-        finally:
-            self.connection.close()
+        with self._database_connect as my_connection:
+            with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
+                cursor.execute("""SELECT * FROM expenses ORDER BY created_on DESC""")
+                rows = cursor.fetchall()
         
         for row in rows:
             columns = [
@@ -59,12 +65,9 @@ class ExpenseData:
             print(' | '.join(columns))
 
     def add_expense(self, amount, memo):
-        try:
-            with self.connection:
-                with self.connection.cursor() as cursor:
-                    cursor.execute("""INSERT INTO expenses (amount, memo, created_on) VALUES (%s, %s, %s)""", (amount, memo, date.today()))
-        finally:
-            self.connection.close()
+        with self._database_connect as my_connection:
+            with my_connection.cursor() as cursor:
+                cursor.execute("""INSERT INTO expenses (amount, memo, created_on) VALUES (%s, %s, %s)""", (amount, memo, date.today()))
 
 if __name__ == '__main__':
     cli = CLI()
