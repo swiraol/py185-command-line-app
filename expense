@@ -19,6 +19,12 @@ class CLI:
             print("You must provide an amount and memo.")
         elif my_list[0] == 'list':
             self.application.list_expenses()
+        elif my_list[0] == 'search':
+            if len(my_list) <= 1:
+                print("You must provide a search query.")
+                return
+            search_term = my_list[1]
+            self.application.search_expenses(search_term)
         elif len(my_list) >= 3:
             amount = my_list[1]
             memo = my_list[2]
@@ -52,7 +58,9 @@ class ExpenseData:
             with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
                 cursor.execute("""SELECT * FROM expenses ORDER BY created_on DESC""")
                 rows = cursor.fetchall()
+                self._display_expenses(rows)
         
+    def _display_expenses(self, rows):
         for row in rows:
             columns = [
                 str(row['id']).rjust(3),
@@ -67,6 +75,13 @@ class ExpenseData:
         with self._database_connect() as my_connection:
             with my_connection.cursor() as cursor:
                 cursor.execute("""INSERT INTO expenses (amount, memo, created_on) VALUES (%s, %s, %s)""", (amount, memo, date.today()))
+    
+    def search_expenses(self, search_term):
+        with self._database_connect() as my_connection:
+            with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
+                cursor.execute('''SELECT * FROM expenses WHERE memo ILIKE %s''', (search_term, ))
+                rows = cursor.fetchall()
+                self._display_expenses(rows)
 
 if __name__ == '__main__':
     cli = CLI()
