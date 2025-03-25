@@ -79,7 +79,7 @@ class ExpenseData:
     def search_expenses(self, search_term):
         with self._database_connect() as my_connection:
             with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
-                cursor.execute('''SELECT * FROM expenses WHERE memo ILIKE %s''', (search_term, ))
+                cursor.execute('''SELECT * FROM expenses WHERE memo ILIKE %s''', (f'%{search_term}%', ))
                 rows = cursor.fetchall()
                 self._display_expenses(rows)
 
