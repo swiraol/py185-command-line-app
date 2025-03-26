@@ -32,6 +32,12 @@ class CLI:
             id = my_list[1]
             # print('id', id)
             self.application.delete_expense(id)
+        elif my_list[0] == 'clear':
+            answer = input("This will remove all expenses. Are you sure? (enter y to confirm)")
+            if answer.casefold() == 'y':
+                self.application.delete_all_expenses()
+            else:
+                return
         elif len(my_list) >= 3:
             amount = my_list[1]
             memo = my_list[2]
@@ -68,7 +74,7 @@ class ExpenseData:
                 self._display_expenses(rows)
         
     def _display_expenses(self, rows):
-        for row in rows:
+        for row in rows: # 
             columns = [
                 str(row['id']).rjust(3),
                 str(row['created_on']),
@@ -91,17 +97,24 @@ class ExpenseData:
                 self._display_expenses(rows)
     def delete_expense(self, idnum):
         with self._database_connect() as my_connection:
-            with my_connection.cursor() as cursor:
-                cursor.execute(f'SELECT expenses.id FROM expenses WHERE id = %s', (idnum, ))
+            with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
+                cursor.execute(f'SELECT * FROM expenses WHERE id = %s', (idnum, ))
                 result = cursor.fetchone()
-                # print('result', result)
-                if result[0] != idnum:
+                if result:
+                    cursor.execute('DELETE FROM expenses where id = %s', (idnum,))
+                    print(f'The following expense has been deleted:')
+                    self._display_expenses([result])
+                else:
                     print(f"There is no expense with id {id}.")
                     return
-                row = cursor.execute('DELETE FROM expenses where id = %s', (idnum,))
-                displayed_row = self._display_expenses(row)
-                print(f'The following expense has been deleted: \n{displayed_row}')
-
+    def delete_all_expenses(self):
+        try:
+            with self._database_connect() as my_connection:
+                with my_connection.cursor() as cursor:
+                    cursor.execute('DELETE FROM expenses')
+                    print("All expenses have been deleted.")
+        finally:
+            my_connection.close()
 if __name__ == '__main__':
     cli = CLI()
     cli.run(sys.argv[1:]) # [./expense, add 1.25 'Coffee']
