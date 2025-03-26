@@ -33,7 +33,7 @@ class CLI:
             # print('id', id)
             self.application.delete_expense(id)
         elif my_list[0] == 'clear':
-            answer = input("This will remove all expenses. Are you sure? (enter y to confirm)")
+            answer = input("This will remove all expenses. Are you sure? (enter y to confirm)").strip()
             if answer.casefold() == 'y':
                 self.application.delete_all_expenses()
             else:
@@ -108,13 +108,10 @@ class ExpenseData:
                     print(f"There is no expense with id {id}.")
                     return
     def delete_all_expenses(self):
-        try:
-            with self._database_connect() as my_connection:
-                with my_connection.cursor() as cursor:
-                    cursor.execute('DELETE FROM expenses')
-                    print("All expenses have been deleted.")
-        finally:
-            my_connection.close()
+        with self._database_connect() as my_connection:
+            with my_connection.cursor() as cursor:
+                cursor.execute('DELETE FROM expenses')
+                print("All expenses have been deleted.")
 if __name__ == '__main__':
     cli = CLI()
     cli.run(sys.argv[1:]) # [./expense, add 1.25 'Coffee']
