@@ -18,29 +18,33 @@ class CLI:
         elif my_list[0] == 'add' and len(my_list) == 1:
             print("You must provide an amount and memo.")
         elif my_list[0] == 'list':
+            self.application._setup_schema()
             self.application.list_expenses()
         elif my_list[0] == 'search':
             if len(my_list) <= 1:
                 print("You must provide a search query.")
                 return
             search_term = my_list[1]
+            self.application._setup_schema()
             self.application.search_expenses(search_term)
         elif my_list[0] == 'delete':
             if len(my_list) <= 1:
                 print("You must provide an id.")
                 return
             id = my_list[1]
-            # print('id', id)
+            self.application._setup_schema()
             self.application.delete_expense(id)
         elif my_list[0] == 'clear':
             answer = input("This will remove all expenses. Are you sure? (enter y to confirm)").strip()
             if answer.casefold() == 'y':
+                self.application._setup_schema()
                 self.application.delete_all_expenses()
             else:
                 return
         elif len(my_list) >= 3:
             amount = my_list[1]
             memo = my_list[2]
+            self.application._setup_schema()
             self.application.add_expense(amount, memo)
 
     def display_help(self):
@@ -66,6 +70,32 @@ class ExpenseData:
         finally:
             connection.close()
     
+    def _setup_schema(self):
+        with self._database_connect() as my_connection:
+            with my_connection.cursor() as cursor:
+                cursor.execute("""SELECT COUNT(*) FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = 'expenses';""")
+                count = cursor.fetchone()
+                if count == 0:
+                    cursor.execute("""CREATE TABLE expenses (
+                    id SERIAL PRIMARY KEY,
+                    amount numeric(10, 2),
+                    memo text,
+                    created_on DATE
+                    );
+
+                    ALTER TABLE expenses
+                    ADD CHECK(amount >= 0.01);
+
+                    DELETE FROM expenses;
+                    INSERT INTO expenses (amount, memo, created_on)
+                    VALUES (14.56, 'Pencils', NOW()),
+                        (3.29, 'Coffee', NOW()),
+                        (49.99, 'Text Editor', NOW());""")
+                    return
+                else:
+                    return
+
     def list_expenses(self):
         with self._database_connect() as my_connection:
             with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
@@ -73,7 +103,8 @@ class ExpenseData:
                 rows = cursor.fetchall()
                 self._display_count(rows)
                 self._display_expenses(rows)
-                self._display_total(rows)
+                if len(rows) > 1:
+                    self._display_total(rows)
         
     def _display_expenses(self, rows):
         for row in rows: # 
@@ -114,7 +145,8 @@ class ExpenseData:
                 rows = cursor.fetchall()
                 self._display_count(rows)
                 self._display_expenses(rows)
-                self._display_total(rows)
+                if len(rows) > 1:
+                    self._display_total(rows)
     def delete_expense(self, idnum):
         with self._database_connect() as my_connection:
             with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
