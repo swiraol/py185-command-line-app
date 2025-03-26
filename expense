@@ -25,6 +25,13 @@ class CLI:
                 return
             search_term = my_list[1]
             self.application.search_expenses(search_term)
+        elif my_list[0] == 'delete':
+            if len(my_list) <= 1:
+                print("You must provide an id.")
+                return
+            id = my_list[1]
+            # print('id', id)
+            self.application.delete_expense(id)
         elif len(my_list) >= 3:
             amount = my_list[1]
             memo = my_list[2]
@@ -82,6 +89,18 @@ class ExpenseData:
                 cursor.execute('''SELECT * FROM expenses WHERE memo ILIKE %s''', (f'%{search_term}%', ))
                 rows = cursor.fetchall()
                 self._display_expenses(rows)
+    def delete_expense(self, idnum):
+        with self._database_connect() as my_connection:
+            with my_connection.cursor() as cursor:
+                cursor.execute(f'SELECT expenses.id FROM expenses WHERE id = %s', (idnum, ))
+                result = cursor.fetchone()
+                # print('result', result)
+                if result[0] != idnum:
+                    print(f"There is no expense with id {id}.")
+                    return
+                row = cursor.execute('DELETE FROM expenses where id = %s', (idnum,))
+                displayed_row = self._display_expenses(row)
+                print(f'The following expense has been deleted: \n{displayed_row}')
 
 if __name__ == '__main__':
     cli = CLI()
