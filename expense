@@ -71,7 +71,9 @@ class ExpenseData:
             with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
                 cursor.execute("""SELECT * FROM expenses ORDER BY created_on DESC""")
                 rows = cursor.fetchall()
+                self._display_count(rows)
                 self._display_expenses(rows)
+                self._display_total(rows)
         
     def _display_expenses(self, rows):
         for row in rows: # 
@@ -83,6 +85,22 @@ class ExpenseData:
             ]
 
             print(' | '.join(columns))
+    
+    def _display_count(self, rows):
+        row_count = len(rows)
+        if row_count == 0:
+            print("There are no expenses")
+        elif row_count == 1:
+            print("There is 1 expense")
+        else:
+            print(f"There are {row_count} expenses")
+
+    def _display_total(self, rows):
+        total = 0
+        for row in rows:
+            total += row['amount']
+        print("--------------------------------------------------")
+        print(f"Total {str(total).rjust(25)}")
 
     def add_expense(self, amount, memo):
         with self._database_connect() as my_connection:
@@ -94,7 +112,9 @@ class ExpenseData:
             with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
                 cursor.execute('''SELECT * FROM expenses WHERE memo ILIKE %s''', (f'%{search_term}%', ))
                 rows = cursor.fetchall()
+                self._display_count(rows)
                 self._display_expenses(rows)
+                self._display_total(rows)
     def delete_expense(self, idnum):
         with self._database_connect() as my_connection:
             with my_connection.cursor(cursor_factory=extras.DictCursor) as cursor:
